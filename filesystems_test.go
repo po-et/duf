@@ -28,7 +28,12 @@ func TestFindMounts(t *testing.T) {
 	root := Mount{Device: "root", Mountpoint: filepath.VolumeName(base) + string(os.PathSeparator)}
 	dataMount := Mount{Device: "data", Mountpoint: data}
 	nestedMount := Mount{Device: "nested", Mountpoint: nested}
-	mounts := []Mount{root, dataMount, nestedMount}
+	devicePath := filepath.Join(base, "device")
+	if err := os.WriteFile(devicePath, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	deviceMount := Mount{Device: devicePath, Mountpoint: filepath.Join(base, "device-mount")}
+	mounts := []Mount{root, dataMount, nestedMount, deviceMount}
 
 	for _, tc := range []struct {
 		name string
@@ -36,6 +41,7 @@ func TestFindMounts(t *testing.T) {
 		want []Mount
 	}{
 		{"root", root.Mountpoint, []Mount{root}},
+		{"device path", devicePath, []Mount{deviceMount}},
 		{"exact mount", data, []Mount{dataMount}},
 		{"descendant", filepath.Join(data, "file"), []Mount{dataMount}},
 		{"sibling directory", sibling, []Mount{root}},
